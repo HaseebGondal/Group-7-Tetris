@@ -244,7 +244,8 @@
             "c:\\users\\faizan ezad\\source\\repos\\group-7-tetris\\dependencies\\sfml\\include\\sfml\\system\\memoryinputstream.hpp",
             "c:\\users\\faizan ezad\\source\\repos\\group-7-tetris\\dependencies\\sfml\\include\\sfml\\system\\sleep.hpp",
             "c:\\users\\faizan ezad\\source\\repos\\group-7-tetris\\dependencies\\sfml\\include\\sfml\\system\\timeoutwithpredicate.hpp",
-            "c:\\users\\faizan ezad\\source\\repos\\group-7-tetris\\dependencies\\sfml\\include\\sfml\\system\\version.hpp"
+            "c:\\users\\faizan ezad\\source\\repos\\group-7-tetris\\dependencies\\sfml\\include\\sfml\\system\\version.hpp",
+            "c:\\program files\\microsoft visual studio\\18\\community\\vc\\tools\\msvc\\14.51.36231\\include\\random"
         ],
         "ImportedModules": [],
         "ImportedHeaderUnits": []
