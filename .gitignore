@@ -14,9 +14,6 @@
 # Linker files
 *.ilk
 
-# Debugger Files
-*.pdb
-
 # Compiled Dynamic libraries
 *.so
 *.dylib
@@ -31,25 +28,11 @@
 *.lai
 *.la
 *.a
-*.lib
 
 # Executables
 *.exe
 *.out
 *.app
-
-# Build directories
-build/
-Build/
-build-*/
-
-# CMake generated files
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
-install_manifest.txt
-compile_commands.json
 
 # Temporary files
 *.tmp
@@ -66,3 +49,9 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+#Visual Studio
+.vs
+
+#Build
+Build
