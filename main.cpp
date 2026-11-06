@@ -7,7 +7,7 @@ enum class block {
 
 
 int main() {
-	sf::RenderWindow window(sf::VideoMode({ 600,800 }), "Tetris Game");
+	sf::RenderWindow window(sf::VideoMode({ 780,800 }), "Tetris Game");
 	window.setFramerateLimit(60);
 	int row = 20;
 	int coloumn = 10;
@@ -16,6 +16,7 @@ int main() {
 	background.setOutlineThickness(1);
 	background.setOutlineColor(sf::Color::White);
 	block Current = block::I;
+	block next = block(rand() % 7);
 
 	int blockX = 0;
 	int blockY = 0;
@@ -134,7 +135,6 @@ int main() {
 			}
 			grid = rotate;
 		}
-		block next = block(rand() % 7);
 
 		window.clear(sf::Color::Black);
 
@@ -155,6 +155,71 @@ int main() {
 			}
 		}
 
+		int preview[4][4] = { 0 };
+
+        sf::RectangleShape previewShape(sf::Vector2f(29, 29));
+
+		if (next == block::I) {
+			preview[3][0] = 1;
+			preview[3][1] = 1;
+			preview[3][2] = 1;
+			preview[3][3] = 1;
+			shape.setFillColor(sf::Color(0, 161, 228));
+		}
+		else if (next == block::J) {
+			preview[2][3] = 1;
+			preview[3][1] = 1;
+			preview[3][2] = 1;
+			preview[3][3] = 1;
+			shape.setFillColor(sf::Color(247, 150, 46));
+		}
+		else if (next == block::T) {
+			preview[2][2] = 1;
+			preview[3][1] = 1;
+			preview[3][2] = 1;
+			preview[3][3] = 1;
+			shape.setFillColor(sf::Color(135, 35, 134));
+		}
+		else if (next == block::S) {
+			preview[2][2] = 1;
+			preview[2][3] = 1;
+			preview[3][1] = 1;
+			preview[3][2] = 1;
+			shape.setFillColor(sf::Color(116, 181, 64));
+		}
+		else if (next == block::Z) {
+			preview[2][1] = 1;
+			preview[2][2] = 1;
+			preview[3][2] = 1;
+			preview[3][3] = 1;
+			shape.setFillColor(sf::Color(234, 31, 34));
+		}
+		else if (next == block::O) {
+			preview[2][1] = 1;
+			preview[2][2] = 1;
+			preview[3][1] = 1;
+			preview[3][2] = 1;
+			shape.setFillColor(sf::Color(255, 198, 11));
+		}
+		else if (next == block::L) {
+			preview[2][1] = 1;
+			preview[3][1] = 1;
+			preview[3][2] = 1;
+			preview[3][3] = 1;
+			shape.setFillColor(sf::Color(0, 110, 175));
+		}
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				if (preview[i][j] == 1) {
+					float nextX = 620 + (j * 30);
+					float nextY = 100 + (i * 30);
+					shape.setSize(sf::Vector2f(59, 39));
+					shape.setPosition(sf::Vector2f(nextX, nextY));
+					window.draw(shape);
+
+				}
+			}
+		}
 		window.display();
 	}
 	return 0;
