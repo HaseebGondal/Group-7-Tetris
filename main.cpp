@@ -1,52 +1,146 @@
 #include<SFML/Graphics.hpp>
 #include <random>
+#include <vector>
+#include<cmath>
 
 enum class block {
 	I, J, L, Z, S, O, T
 };
 
 
+std::vector<std::vector<int>> BlockPosition(sf::RectangleShape& rect, block& MinoBlock, int& length) {
+	switch (MinoBlock) {
+	case::block::I:
+		rect.setFillColor(sf::Color::Cyan);
+		length = 4;
+		return{
+		{0, 0, 1, 0},
+		{0, 0, 1, 0},
+		{0, 0, 1, 0},
+		{0, 0, 1, 0}
+		};
+		break;
+	case::block::J:
+		rect.setFillColor(sf::Color(247, 150, 46));
+		length = 3;
+		return {
+			{0, 1, 0},
+			{0, 1, 0},
+			{1, 1, 0}
+		};
+		break;
+	case::block::L:
+		rect.setFillColor(sf::Color::Blue);
+		length = 3;
+		return {
+			{0, 1, 0},
+			{0, 1, 0},
+			{0, 1, 1}
+		};
+		break;
+	case::block::O:
+		rect.setFillColor(sf::Color::Yellow);
+		length = 2;
+		return {
+			{1, 1},
+			{1, 1}
+		};
+		break;
+	case::block::S:
+		rect.setFillColor(sf::Color::Green);
+		length = 3;
+		return {
+			{0, 1, 1},
+			{1, 1, 0},
+			{0, 0, 0}
+		};
+		break;
+	case::block::T:
+		rect.setFillColor(sf::Color(135, 35, 134));
+		length = 3;
+		return {
+			{0, 1, 0},
+			{1, 1, 0},
+			{0, 1, 0}
+		};
+		break;
+	case::block::Z:
+		rect.setFillColor(sf::Color::Red);
+		length = 3;
+		return {
+			{1, 1, 0},
+			{0, 1, 1},
+			{0, 0, 0}
+		};
+		break;
+	}
+}
+
+void Drop(int& blockY, int level, float DeltaTime, float& fallTimer) {
+	double fallSpeed = 0.8 - ((level - 1) * 0.007);
+	float fallDelay = pow(fallSpeed, (level - 1));
+	fallTimer += DeltaTime;
+
+	if (fallTimer >= fallDelay) {
+		blockY++;
+		fallTimer = 0.0f;
+	}
+}
+
+
 int main() {
-	sf::RenderWindow window(sf::VideoMode({ 780,800 }), "Tetris Game");
+	//----------------------------------Screen Dimensions-----------------------------------------------
+	sf::RenderWindow window(sf::VideoMode({ 600,800 }), "Tetris Game");
 	window.setFramerateLimit(60);
 	int row = 20;
 	int coloumn = 10;
-	sf::RectangleShape background(sf::Vector2f(60 - 1, 40 - 1));
+	//-----------------------------------Definition-----------------------------------------------------
+	sf::RectangleShape background(sf::Vector2f(39, 39));
+	int blockX = 3;
+	int blockY = 0;
+	int rotate = 0;
+	int length;
+	int Nextlength;
+	block Current = block(rand()%7);
+	block Next = block(rand() % 7);
+	sf::RectangleShape shape(sf::Vector2f(39, 39));
+	sf::RectangleShape Previewshape(sf::Vector2f(29, 29));
+	sf::RectangleShape Previewrect(sf::Vector2f(120, 120));
+	sf::Time movementTime;
+	int lineCleared = 0;
+	int level = 1;
+	float fallTimer = 0.0f;
+	sf::Clock Timer;
+
+	//-----------------------------------Customization------------------------------------------------------
 	background.setFillColor(sf::Color::Black);
 	background.setOutlineThickness(1);
 	background.setOutlineColor(sf::Color::White);
-	block Current = block::I;
-	block next = block(rand() % 7);
+	Previewshape.setOutlineThickness(1);
+	Previewshape.setOutlineColor(sf::Color::White);
+	Previewrect.setOutlineThickness(1);
+	Previewrect.setOutlineColor(sf::Color::White);
+	Previewrect.setFillColor(sf::Color::Black);
+	Previewrect.setPosition(sf::Vector2f(440, 80));
 
-	int blockX = 0;
-	int blockY = 0;
-	int rotate = 0;
-
-	sf::RectangleShape shape(sf::Vector2f(60 - 1, 40 - 1));
-
+	//--------------------------------Game Loop-------------------------------------------------------------
 	while (window.isOpen()) {
+		//------------------------------------Event Check & Movement----------------------------------------
 		while (const auto event = window.pollEvent()) {
 			if (event->is < sf::Event::Closed >()) {
 				window.close();
 			}
 			if (event->is < sf::Event::KeyPressed >()) {
 				auto key = event->getIf < sf::Event::KeyPressed >();
-				// left
+
 				if (key->code == sf::Keyboard::Key::Left || key->code == sf::Keyboard::Key::A) {
 					if (blockX > -1) {
 						blockX--;
 					}
 				}
-				// right 
-				if (key->code == sf::Keyboard::Key::Right || key->code == sf::Keyboard::Key::D) {
+				else if (key->code == sf::Keyboard::Key::Right || key->code == sf::Keyboard::Key::D) {
 					if (blockX < 5) {
 						blockX++;
-					}
-				}
-				// down 
-				if (key->code == sf::Keyboard::Key::Down || key->code == sf::Keyboard::Key::S) {
-					if (blockY < 18) {
-						blockY++;
 					}
 				}
 				// spacebar
@@ -58,168 +152,66 @@ int main() {
 				}
 			}
 		}
-		std::vector<std::vector<int>> grid(4, std::vector<int>(4, 0));
-
-		if (Current == block::I) {
-			grid = {
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{1, 1, 1, 1}
-			};
-			shape.setFillColor(sf::Color(0, 161, 228));
+		//---------------------------block generation and colour--------------------------------------------
+		bool reachedBottom = false;
+		std::vector<std::vector<int>> Currentgrid = BlockPosition(shape, Current, length);
+		if (reachedBottom) {
+			Current = Next;
+			Next = static_cast<block>(rand() % 7);
+			blockX = 3;
+			blockY = 0;
+			Currentgrid = BlockPosition(shape, Current, length);
 		}
-		else if (Current == block::J) {
-			grid = {
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{0, 0, 0, 1},
-				{0, 1, 1, 1}
-			};
-			shape.setFillColor(sf::Color(247, 150, 46));
-		}
-		else if (Current == block::L) {
-			grid = {
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{0, 1, 0, 0},
-				{0, 1, 1, 1}
-			};
-			shape.setFillColor(sf::Color(0, 110, 175));
-		}
-		else if (Current == block::S) {
-			grid = {
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{0, 0, 1, 1},
-				{0, 1, 1, 0}
-			};
-			shape.setFillColor(sf::Color(116, 181, 64));
-		}
-		else if (Current == block::Z) {
-			grid = {
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{1, 1, 0, 0},
-				{0, 1, 1, 0}
-			};
-			shape.setFillColor(sf::Color(234, 31, 34));
-		}
-		else if (Current == block::T) {
-			grid = {
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{0, 0, 1, 0},
-				{0, 1, 1, 1}
-			};
-			shape.setFillColor(sf::Color(135, 35, 134));
-		}
-		else if (Current == block::O) {
-			grid = {
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-				{0, 1, 1, 0},
-				{0, 1, 1, 0}
-			};
-			shape.setFillColor(sf::Color(255, 198, 11));
-		}
-
-		// rotate
+		std::vector<std::vector<int>> Nextgrid = BlockPosition(Previewshape, Next, Nextlength);
+		//--------------------------Constant Drop------------------------------------------------------------
+		float deltaTime = Timer.restart().asSeconds();
+		Drop(blockY, level, deltaTime, fallTimer);
+		//-----------------------------Rotation--------------------------------------------------------------
 		for (int r = 0;r < rotate;r++) {
 			std::vector<std::vector<int>>rotate(4, std::vector<int>(4, 0));
 
-			for (int i = 0;i < 4;i++) {
-				for (int j = 0;j < 4;j++) {
-					rotate[j][3 - i] = grid[i][j];
+			for (int i = 0;i < length;i++) {
+				for (int j = 0;j < length;j++) {
+					rotate[j][length - 1 - i] = Currentgrid[i][j];
 				}
 			}
-			grid = rotate;
+			Currentgrid = rotate;
 		}
-
+		//----------------------------------------Drawing------------------------------------------------------
 		window.clear(sf::Color::Black);
 
 		for (int i = 0;i < row;i++) {
 			for (int j = 0;j < coloumn;j++) {
-				background.setPosition(sf::Vector2f(j * 60, i * 40));
+				background.setPosition(sf::Vector2f(20+(j * 40), i * 40));
 				window.draw(background);
 			}
 		}
-		for (int i = 0;i < 4;i++) {
-			for (int j = 0;j < 4;j++) {
-				if (grid[i][j] == 1) {
-					float posX = (1 + j + blockX) * 60;
-					float posY = (-2 + i + blockY) * 40;
+		window.draw(Previewrect);
+		for (int i = 0;i < length;i++) {
+			for (int j = 0;j < length;j++) {
+				if (Currentgrid[i][j] == 1) {
+					float posX = 20+((j + blockX) * 40);
+					float posY = (i + blockY) * 40;
 					shape.setPosition(sf::Vector2f(posX, posY));
 					window.draw(shape);
 				}
 			}
 		}
+		float previewCellSize = 25.0f;
+		float previewStartX = 500.0f - ((Nextlength * previewCellSize) / 2.0f);
+		float previewStartY = 140.0f - ((Nextlength * previewCellSize) / 2.0f);
 
-		int preview[4][4] = { 0 };
-
-        sf::RectangleShape previewShape(sf::Vector2f(29, 29));
-
-		if (next == block::I) {
-			preview[3][0] = 1;
-			preview[3][1] = 1;
-			preview[3][2] = 1;
-			preview[3][3] = 1;
-			shape.setFillColor(sf::Color(0, 161, 228));
-		}
-		else if (next == block::J) {
-			preview[2][3] = 1;
-			preview[3][1] = 1;
-			preview[3][2] = 1;
-			preview[3][3] = 1;
-			shape.setFillColor(sf::Color(247, 150, 46));
-		}
-		else if (next == block::T) {
-			preview[2][2] = 1;
-			preview[3][1] = 1;
-			preview[3][2] = 1;
-			preview[3][3] = 1;
-			shape.setFillColor(sf::Color(135, 35, 134));
-		}
-		else if (next == block::S) {
-			preview[2][2] = 1;
-			preview[2][3] = 1;
-			preview[3][1] = 1;
-			preview[3][2] = 1;
-			shape.setFillColor(sf::Color(116, 181, 64));
-		}
-		else if (next == block::Z) {
-			preview[2][1] = 1;
-			preview[2][2] = 1;
-			preview[3][2] = 1;
-			preview[3][3] = 1;
-			shape.setFillColor(sf::Color(234, 31, 34));
-		}
-		else if (next == block::O) {
-			preview[2][1] = 1;
-			preview[2][2] = 1;
-			preview[3][1] = 1;
-			preview[3][2] = 1;
-			shape.setFillColor(sf::Color(255, 198, 11));
-		}
-		else if (next == block::L) {
-			preview[2][1] = 1;
-			preview[3][1] = 1;
-			preview[3][2] = 1;
-			preview[3][3] = 1;
-			shape.setFillColor(sf::Color(0, 110, 175));
-		}
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				if (preview[i][j] == 1) {
-					float nextX = 620 + (j * 30);
-					float nextY = 100 + (i * 30);
-					shape.setSize(sf::Vector2f(59, 39));
-					shape.setPosition(sf::Vector2f(nextX, nextY));
-					window.draw(shape);
-
+		for (int i = 0; i < Nextlength; i++) {
+			for (int j = 0; j < Nextlength; j++) {
+				if (Nextgrid[i][j] == 1) {
+					float nextX = previewStartX + (j * previewCellSize);
+					float nextY = previewStartY + (i * previewCellSize);
+					Previewshape.setPosition(sf::Vector2f(nextX, nextY));
+					window.draw(Previewshape);
 				}
 			}
 		}
+
 		window.display();
 	}
 	return 0;
