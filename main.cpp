@@ -209,12 +209,12 @@ int main() {
 		bool reachedBottom = false;
 
 		std::vector<std::vector<int>> Nextgrid = BlockPosition(Previewshape, Next, Nextlength);
-		//--------------------------Constant Drop------------------------------------------------------------
+		//--------------------------Constant Drop and Locking Positon------------------------------------------------------------
 		float deltaTime = Timer.restart().asSeconds();
 		Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid);
 		if (reachedBottom == true) {
 			Current = Next;
-			Next = block(rand() % 7);
+			Next = static_cast<block>(rand() % 7);
 			blockX = 3;
 			blockY = 0;
 			Currentgrid = BlockPosition(shape, Current, length);
@@ -240,6 +240,11 @@ int main() {
 			for (int j = 0;j < column;j++) {
 				background.setPosition(sf::Vector2f(20 + (j * 40), i * 40));
 				window.draw(background);
+
+				if (GameGrid[i][j] == 1) {
+					shape.setPosition(sf::Vector2f(20 + (j * 40), i * 40));
+					window.draw(shape);
+				}
 			}
 		}
 		window.draw(Previewrect);
