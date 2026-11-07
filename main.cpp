@@ -206,20 +206,21 @@ int main() {
 				}
 			}
 		}
-		//---------------------------block generation and colour--------------------------------------------
 		bool reachedBottom = false;
 
-		if (reachedBottom) {
-			Current = Next;
-			Next = static_cast<block>(rand() % 7);
-			blockX = 3;
-			blockY = 0;
-			Currentgrid = BlockPosition(shape, Current, length);
-		}
 		std::vector<std::vector<int>> Nextgrid = BlockPosition(Previewshape, Next, Nextlength);
 		//--------------------------Constant Drop------------------------------------------------------------
 		float deltaTime = Timer.restart().asSeconds();
 		Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid);
+		if (reachedBottom == true) {
+			Current = Next;
+			Next = block(rand() % 7);
+			blockX = 3;
+			blockY = 0;
+			Currentgrid = BlockPosition(shape, Current, length);
+
+			reachedBottom = false;
+		}
 		//-----------------------------Rotation--------------------------------------------------------------
 		Currentgrid = BlockPosition(shape, Current, length);
 		for (int r = 0;r < rotate;r++) {
@@ -265,6 +266,7 @@ int main() {
 					window.draw(Previewshape);
 				}
 			}
+
 		}
 
 		window.display();
