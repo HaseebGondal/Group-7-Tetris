@@ -148,6 +148,29 @@ void CollisionResult(std::vector<std::vector<int>> Currentgrid, std::vector<std:
 	}
 }
 
+void clearance(std::vector<std::vector<int>>& GameGrid, int row, int column, int& clearline) {
+	for (int i = row - 1;i >= 0;i--) {
+		bool RowComplete = true;
+		for (int j = 0;j < column;j++) {
+			if (GameGrid[i][j] == 0) {
+				RowComplete = false;
+				break;
+			}
+		}
+		if (RowComplete == true) {
+			for (int k = i;k > 0;k--) {
+				for (int j = 0;j < column;j++) {
+					GameGrid[k][j] = GameGrid[k - 1][j];
+				}
+			}
+			for (int j = 0;j < column;j++) {
+				GameGrid[0][j] = 0;
+			}
+			i++;
+		}
+	}
+}
+
 void GridShapeColour(sf::RectangleShape& rect,int colour) {
 	if (colour == 1) {
 		rect.setFillColor(sf::Color::Cyan);
@@ -268,6 +291,7 @@ int main() {
 		float deltaTime = Timer.restart().asSeconds();
 		Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid,id);
 		CollisionResult(Currentgrid, GameGrid, length, blockX, blockY, row, column, reachedBottom);
+		clearance(GameGrid, row, column, lineCleared);
 		if (reachedBottom == true) {
 			Current = Next;
 			Next = static_cast<block>(rand() % 7);
