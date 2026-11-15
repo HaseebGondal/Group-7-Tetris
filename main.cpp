@@ -2,6 +2,7 @@
 #include <random>
 #include <vector>
 #include<cmath>
+#include<string>
 
 enum class block {
 	I, J, L, Z, S, O, T
@@ -148,7 +149,8 @@ void CollisionResult(std::vector<std::vector<int>> Currentgrid, std::vector<std:
 	}
 }
 
-void clearance(std::vector<std::vector<int>>& GameGrid, int row, int column, int& clearline) {
+void clearance(std::vector<std::vector<int>>& GameGrid, int row, int column, int& clearline, int& level, int& score) {
+	int lines = 0;
 	for (int i = row - 1;i >= 0;i--) {
 		bool RowComplete = true;
 		for (int j = 0;j < column;j++) {
@@ -158,6 +160,8 @@ void clearance(std::vector<std::vector<int>>& GameGrid, int row, int column, int
 			}
 		}
 		if (RowComplete == true) {
+			clearline++;
+			lines++;
 			for (int k = i;k > 0;k--) {
 				for (int j = 0;j < column;j++) {
 					GameGrid[k][j] = GameGrid[k - 1][j];
@@ -169,6 +173,20 @@ void clearance(std::vector<std::vector<int>>& GameGrid, int row, int column, int
 			i++;
 		}
 	}
+	if (lines == 1) {
+		score += 100 * level;
+	}
+	else if (lines == 2) {
+		score += 300 * level;
+	}
+	else if (lines == 3) {
+		score += 500 * level;
+	}
+	else if (lines == 4) {
+		score += 800 * level;
+	}
+
+	level = (clearline / 7) + 1;
 }
 
 void GridShapeColour(sf::RectangleShape& rect,int colour) {
@@ -237,9 +255,11 @@ int main() {
 	sf::RectangleShape Gridshape(sf::Vector2f(39, 39));
 	sf::RectangleShape Previewshape(sf::Vector2f(29, 29));
 	sf::RectangleShape Previewrect(sf::Vector2f(120, 120));
+	sf::RectangleShape Scorerect(sf::Vector2f(120, 180));
 	sf::Time movementTime;
 	int lineCleared = 0;
 	int level = 1;
+	int score = 0;
 	float fallTimer = 0.0f;
 	sf::Clock Timer;
 	int id = 1;
@@ -254,6 +274,18 @@ int main() {
 	Previewrect.setOutlineColor(sf::Color::White);
 	Previewrect.setFillColor(sf::Color::Black);
 	Previewrect.setPosition(sf::Vector2f(440, 80));
+	Scorerect.setOutlineThickness(1);
+	Scorerect.setOutlineColor(sf::Color::White);
+	Scorerect.setFillColor(sf::Color::Black);
+	Scorerect.setPosition(sf::Vector2f(440, 230));
+	sf::Font font;
+	if (!font.openFromFile("C:/Windows/Fonts/arial.ttf")) {
+		return -1;
+	}
+	sf::Text scoreText(font);
+	scoreText.setCharacterSize(18);
+	scoreText.setFillColor(sf::Color::White);
+	scoreText.setPosition(sf::Vector2f(450, 240));
 
 	//--------------------------------Game Loop-------------------------------------------------------------
 	bool hardDrop = true;
@@ -281,9 +313,12 @@ int main() {
 					}
 				}
 				else if ((key->code == sf::Keyboard::Key::Down || key->code == sf::Keyboard::Key::S) && hardDrop) {
+					int droppedLines = 0;
 					while (!VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, blockY, row, column, 1)) {
 						blockY++;
+						droppedLines++;
 					}
+					score += 2 * droppedLines;
 					reachedBottom = true;
 					fallTimer = 0.0f;
 					hardDrop = false;
@@ -308,7 +343,7 @@ int main() {
 			Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid, id);
 		}
 		CollisionResult(Currentgrid, GameGrid, length, blockX, blockY, row, column, reachedBottom);
-		clearance(GameGrid, row, column, lineCleared);
+		clearance(GameGrid, row, column, lineCleared, level, score);
 		if (reachedBottom == true) {
 			Current = Next;
 			Next = static_cast<block>(rand() % 7);
@@ -335,6 +370,11 @@ int main() {
 			}
 		}
 		window.draw(Previewrect);
+		window.draw(Scorerect);
+		scoreText.setString(
+			"Score:\n" + std::to_string(score));
+		window.draw(scoreText);
+
 		for (int i = 0;i < length;i++) {
 			for (int j = 0;j < length;j++) {
 				if (Currentgrid[i][j] != 0) {
