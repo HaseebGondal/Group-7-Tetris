@@ -256,7 +256,9 @@ int main() {
 	Previewrect.setPosition(sf::Vector2f(440, 80));
 
 	//--------------------------------Game Loop-------------------------------------------------------------
+	bool hardDrop = true;
 	while (window.isOpen()) {
+		bool reachedBottom = false;
 		//------------------------------------Event Check & Movement----------------------------------------
 		while (const auto event = window.pollEvent()) {
 			if (event->is < sf::Event::Closed >()) {
@@ -278,18 +280,33 @@ int main() {
 						blockX++;
 					}
 				}
+				else if ((key->code == sf::Keyboard::Key::Down || key->code == sf::Keyboard::Key::S) && hardDrop) {
+					while (!VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, blockY, row, column, 1)) {
+						blockY++;
+					}
+					reachedBottom = true;
+					fallTimer = 0.0f;
+					hardDrop = false;
+				}
 				// spacebar
 				if (key->code == sf::Keyboard::Key::Space) {
 					ShadowRotate(Currentgrid, GameGrid, length, blockX, blockY, row, column);
 				}
 			}
+			if (event->is < sf::Event::KeyReleased >()) {     // Made next drop possible
+				auto key = event->getIf < sf::Event::KeyReleased >();
+				if (key->code == sf::Keyboard::Key::Down || key->code == sf::Keyboard::Key::S) {
+					hardDrop = true;
+				}
+			}
 		}
-		bool reachedBottom = false;
-
+	
 		std::vector<std::vector<int>> Nextgrid = BlockPosition(Previewshape, Next, Nextlength,id);
 		//--------------------------Constant Drop and Locking Positon------------------------------------------------------------
 		float deltaTime = Timer.restart().asSeconds();
-		Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid,id);
+		if (reachedBottom == false) {
+			Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid, id);
+		}
 		CollisionResult(Currentgrid, GameGrid, length, blockX, blockY, row, column, reachedBottom);
 		clearance(GameGrid, row, column, lineCleared);
 		if (reachedBottom == true) {
