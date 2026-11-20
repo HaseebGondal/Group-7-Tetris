@@ -1,4 +1,5 @@
 #include<SFML/Graphics.hpp>
+#include<SFML/Audio.hpp>
 #include <random>
 #include <vector>
 #include<cmath>
@@ -326,7 +327,24 @@ int main() {
 	startGame.setString("Start Game");
 	//--------------------------------Game Loop-------------------------------------------------------------
 	bool hardDrop = true;
+	std::string songs[5] = { "song1.wav", "song2.wav", "song3.wav", "song4.wav", "song5.wav" };
+	int currentTrack = 0;
+	sf::Music bgMusic;
+	if (!bgMusic.openFromFile(songs[currentTrack])) {
+		return -1;
+	}
+	bgMusic.setLooping(false);
+	bgMusic.setVolume(50.f);
+	bgMusic.play();
 	while (window.isOpen()) {
+		if (bgMusic.getStatus() == sf::SoundSource::Status::Stopped) {
+			currentTrack++;
+			if (currentTrack == 5) {
+				currentTrack = 0;
+			}
+			bgMusic.openFromFile(songs[currentTrack]);
+			bgMusic.play();
+		}
 		bool reachedBottom = false;
 		//------------------------------------Event Check & Movement----------------------------------------
 		while (const auto event = window.pollEvent()) {
@@ -390,9 +408,11 @@ int main() {
 				if (key->code == sf::Keyboard::Key::P) {
 					if (gevent == Gameevents::Playing) {
 						gevent = Gameevents::Pause;
+						bgMusic.pause();
 					}
 					else if (gevent == Gameevents::Pause) {
 						gevent = Gameevents::Playing;
+						bgMusic.play();
 					}
 				}
 			}
