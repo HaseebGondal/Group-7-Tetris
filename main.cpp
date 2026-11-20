@@ -260,6 +260,12 @@ int main() {
 	int Nextlength;
 	block Current = block(rand() % 7);
 	block Next = block(rand() % 7);
+	block Hold = block::I;
+	bool hasHold = false;
+	bool canHold = true;
+	int Holdlength = 0;
+	sf::RectangleShape Holdshape(sf::Vector2f(29, 29));
+	sf::RectangleShape Holdrect(sf::Vector2f(120, 120));
 	sf::RectangleShape shape(sf::Vector2f(39, 39));
 	sf::RectangleShape Gridshape(sf::Vector2f(39, 39));
 	sf::RectangleShape Previewshape(sf::Vector2f(29, 29));
@@ -293,6 +299,12 @@ int main() {
 	Scorerect.setOutlineColor(sf::Color::White);
 	Scorerect.setFillColor(sf::Color::Black);
 	Scorerect.setPosition(sf::Vector2f(440, 230));
+	Holdshape.setOutlineThickness(1);
+	Holdshape.setOutlineColor(sf::Color::White);
+	Holdrect.setOutlineThickness(1);
+	Holdrect.setOutlineColor(sf::Color::White);
+	Holdrect.setFillColor(sf::Color::Black);
+	Holdrect.setPosition(sf::Vector2f(440, 455));
 	Image.setPosition(sf::Vector2f(120, 50));
 	Image.setScale(sf::Vector2f(1.25, 1.25));
 	start.setFillColor(sf::Color::Cyan);
@@ -308,6 +320,9 @@ int main() {
 	sf::Text pauseText(font, "PAUSED", 48);
 	sf::Text gameOver(font, "Game Over", 48);
 	sf::Text returnToMenue(font, "Main Menue", 28);
+	sf::Text holdText(font, "Hold H / Take U", 16);
+	holdText.setFillColor(sf::Color::White);
+	holdText.setPosition({ 440, 425 });
 	pauseText.setFillColor(sf::Color::White);
 	gameOver.setFillColor(sf::Color::White);
 	pauseText.setPosition({ 180,50 });
@@ -399,6 +414,40 @@ int main() {
 					else if (key->code == sf::Keyboard::Key::Space) {
 						ShadowRotate(Currentgrid, GameGrid, length, blockX, blockY, row, column);
 					}
+					else if (key->code == sf::Keyboard::Key::H && canHold && !reachedBottom) {
+						if (!hasHold) {
+							Hold = Current;
+							hasHold = true;
+							Current = Next;
+							Next = static_cast<block>(rand() % 7);
+						}
+						else {
+							block temp = Current;
+							Current = Hold;
+							Hold = temp;
+						}
+						blockX = 3;
+						blockY = 0;
+						fallTimer = 0.0f;
+						id = 1;
+						Currentgrid = BlockPosition(shape, Current, length, id);
+						canHold = false;
+						if (VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, blockY, row, column, 0)) {
+							gevent = Gameevents::GameOver;
+						}
+					}
+					else if (key->code == sf::Keyboard::Key::U && hasHold && !reachedBottom) {
+						Current = Hold;
+						hasHold = false;
+						blockX = 3;
+						blockY = 0;
+						fallTimer = 0.0f;
+						id = 1;
+						Currentgrid = BlockPosition(shape, Current, length, id);
+						if (VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, blockY, row, column, 0)) {
+							gevent = Gameevents::GameOver;
+						}
+					}
 
 				}
 
@@ -439,6 +488,7 @@ int main() {
 				blockX = 3;
 				blockY = 0;
 				id = 1;
+				canHold = true;
 				Currentgrid = BlockPosition(shape, Current, length, id);
 				reachedBottom = false;
 				if (VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, blockY, row, column, 0)) {
@@ -463,6 +513,8 @@ int main() {
 					}
 				}
 				window.draw(Previewrect);
+				window.draw(Holdrect);
+				window.draw(holdText);
 			if (gevent == Gameevents::Playing) {
 				window.draw(Scorerect);
 				scoreText.setString(
@@ -493,6 +545,24 @@ int main() {
 						}
 					}
 
+				}
+				if (hasHold) {
+					int holdId = 1;
+					std::vector<std::vector<int>> Holdgrid = BlockPosition(Holdshape, Hold, Holdlength, holdId);
+					if (!canHold) {
+						Holdshape.setFillColor(sf::Color(90, 90, 90));
+					}
+					float holdStartX = 500.0f - ((Holdlength * previewCellSize) / 2.0f);
+					float holdStartY = 515.0f - ((Holdlength * previewCellSize) / 2.0f);
+					for (int i = 0; i < Holdlength; i++) {
+						for (int j = 0; j < Holdlength; j++) {
+							if (Holdgrid[i][j] != 0) {
+								Holdshape.setPosition(sf::Vector2f(holdStartX + (j * previewCellSize),
+									holdStartY + (i * previewCellSize)));
+								window.draw(Holdshape);
+							}
+						}
+					}
 				}
 			}
 			if (gevent == Gameevents::Pause) {
