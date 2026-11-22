@@ -126,9 +126,12 @@ bool VerticalCollisionCheck(std::vector<std::vector<int>> Currentgrid, std::vect
 	return false;
 }
 
-void Drop(int& blockY, int level, float DeltaTime, float& fallTimer, std::vector<std::vector<int>>& Currentgrid, int length, bool& reachedBottom, int blockX, int column, int row,std::vector<std::vector<int>>& GameGrid,block Current,bool& lastButtonSpin) {
+void Drop(int& blockY, int level, float DeltaTime, float& fallTimer, std::vector<std::vector<int>>& Currentgrid, int length, bool& reachedBottom, int blockX, int column, int row,std::vector<std::vector<int>>& GameGrid,block Current,bool& lastButtonSpin,bool softDrop =false) {
 	double fallSpeed = 0.8 - ((level - 1) * 0.007);
 	float fallDelay = pow(fallSpeed, (level - 1));
+	if (softDrop) {
+		fallDelay = 0.3f;
+	}
 	fallTimer += DeltaTime;
 	if (fallTimer >= fallDelay) {
 		int offset = 1;
@@ -220,6 +223,22 @@ void clearance(std::vector<std::vector<int>>& GameGrid, int row, int column, int
 	}
 
 	level = (clearline / 7) + 1;
+}
+std::vector<int> FindCompletedRow(std::vector<std::vector<int>>& GameGrid, int row, int column) {
+	std::vector<int> completedRows;
+	for (int i = row - 1;i >= 0;i--) {
+		bool RowCompleted = true;
+		for (int j = 0;j < column;j++) {
+			if (GameGrid[i][j] == 0) {
+				RowCompleted = false;
+				break;
+			}
+		}
+		if (RowCompleted == true) {
+			completedRows.push_back(i);
+		}
+	}
+	return completedRows;
 }
 
 void GridShapeColour(sf::RectangleShape& rect,int colour) {
@@ -470,8 +489,13 @@ int main() {
 	int level = 1;
 	int score = 0;
 	float fallTimer = 0.0f;
+	std::vector<int> clearingRows;
+	bool isClearingAnimation = false;
+	float clearingAnimationTimer = 0.0f;
 	bool reachedBottom = false;
+	bool isTspin = false;
 	bool hardDrop = true;
+	bool softDrop = false;
 	bool clockWise = false;
 	std::vector<std::vector<int>> Currentgrid = BlockPosition(shape, Current, length);
 	//--------------------------------------------Credits-----------------------------------------------------------------
@@ -683,7 +707,10 @@ int main() {
 							blockX++;
 						}
 					}
-					else if (key->code == sf::Keyboard::Key::Down && hardDrop) {
+					else if (key->code == sf::Keyboard::Key::Down) {
+						softDrop = true;
+					}
+					else if (key->code == sf::Keyboard::Key::Space && hardDrop) {
 						int droppedLines = 0;
 						while (!VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, blockY, row, column, 1)) {
 							blockY++;
@@ -731,10 +758,14 @@ int main() {
 				if (event->is < sf::Event::KeyReleased >()) {
 					auto key = event->getIf < sf::Event::KeyReleased >();
 					if (key->code == sf::Keyboard::Key::Down) {
+						softDrop = false;
+					}
+					if (key->code == sf::Keyboard::Key::Space) {
 						hardDrop = true;
 					}
 				}
 			}
+			
 			if (event->is < sf::Event::KeyPressed >()) {
 				auto key = event->getIf < sf::Event::KeyPressed >();
 				if (key->code == sf::Keyboard::Key::P) {
@@ -755,6 +786,15 @@ int main() {
 		//--------------------------Constant Drop and Locking Positon------------------------------------------------------------
 		if (gevent == Gameevents::Playing) {
 			float deltaTime = Timer.restart().asSeconds();
+			if (isClearingAnimation) {
+				clearingAnimationTimer += deltaTime;
+				if (clearingAnimationTimer > 0.5f) {
+					clearance(GameGrid, row, column, lineCleared, level, score, isTspin);
+					clearingRows.clear();
+					isClearingAnimation = false;
+					clearingAnimationTimer = 0.0f;
+				}
+			}
 			//----------------------------------------Game Modes---------------------------------------------------------------------
 			switch (CurrentMode) {
 			case::GameModes::Timer:
@@ -776,13 +816,22 @@ int main() {
 				break;
 			}
 			//---------------------------------------------------T Spin-----------------------------------------------------------------
-			bool isTspin = false;
+			
 			if (Current == block::T && lastButtonSpin && reachedBottom) {
 				isTspin = Tspin(Currentgrid, GameGrid, blockX, blockY, length, row, column);
 			}
 			//------------------------------------------Collision and Line clearing------------------------------------------------------------
 			CollisionResult(Currentgrid, GameGrid, length, blockX, blockY, row, column, reachedBottom);
-			clearance(GameGrid, row, column, lineCleared, level, score, isTspin);
+			if (!isClearingAnimation) {
+				clearingRows = FindCompletedRow(GameGrid, row, column);
+				if (!clearingRows.empty()) {
+					isClearingAnimation = true;
+					clearingAnimationTimer = 0.0f;
+				}
+				else {
+					clearance(GameGrid, row, column, lineCleared, level, score, isTspin);
+				}
+			}
 			//---------------------------------------------High Score-------------------------------------------------------------------
 			int modeIdx = static_cast<int>(CurrentMode);
 			if (score > highScores[modeIdx]) {
@@ -794,7 +843,7 @@ int main() {
 				}
 			}
 			//--------------------------------------------Vertical Drop and Locking--------------------------------------------------
-			if (reachedBottom) {
+			if (reachedBottom && !isClearingAnimation) {
 				Current = Next;
 				Next = static_cast<block>(dist(rng));
 				blockX = 3;
@@ -808,7 +857,7 @@ int main() {
 				}
 			}
 			else {
-				Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid, Current, lastButtonSpin);
+				Drop(blockY, level, deltaTime, fallTimer, Currentgrid, length, reachedBottom, blockX, column, row, GameGrid, Current, lastButtonSpin,softDrop);
 			}
 			//------------------------------------------Game Over Conditions-------------------------------------------------------------------
 			for (int i = 0; i < bufferRow; i++) {
@@ -831,6 +880,18 @@ int main() {
 						int colour = GameGrid[i][j];
 						Gridshape.setPosition(sf::Vector2f(20 + (j * 40), (i - bufferRow) * 40));
 						GridShapeColour(Gridshape, colour);
+						bool whiteRow = false;
+						if (isClearingAnimation) {
+							for (int k = 0;k < clearingRows.size();k++) {
+								if (i == clearingRows[k]) {
+									whiteRow = true;
+									break;
+								}
+							}
+						}
+						if (whiteRow) {
+							Gridshape.setFillColor(sf::Color::White);
+						}
 						window.draw(Gridshape);
 					}
 				}
