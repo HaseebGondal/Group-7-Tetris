@@ -493,6 +493,7 @@ int main() {
 	bool isClearingAnimation = false;
 	float clearingAnimationTimer = 0.0f;
 	bool reachedBottom = false;
+	bool hasLocked = false;
 	bool isTspin = false;
 	bool hardDrop = true;
 	bool softDrop = false;
@@ -821,7 +822,10 @@ int main() {
 				isTspin = Tspin(Currentgrid, GameGrid, blockX, blockY, length, row, column);
 			}
 			//------------------------------------------Collision and Line clearing------------------------------------------------------------
-			CollisionResult(Currentgrid, GameGrid, length, blockX, blockY, row, column, reachedBottom);
+			if (reachedBottom && !hasLocked) {
+				CollisionResult(Currentgrid, GameGrid, length, blockX, blockY, row, column, reachedBottom);
+				hasLocked = true;
+			}
 			if (!isClearingAnimation) {
 				clearingRows = FindCompletedRow(GameGrid, row, column);
 				if (!clearingRows.empty()) {
@@ -852,6 +856,7 @@ int main() {
 				lastButtonSpin = false;
 				Currentgrid = BlockPosition(shape, Current, length);
 				reachedBottom = false;
+				hasLocked = false;
 				if (VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, blockY, row, column, 0)) {
 					gevent = Gameevents::GameOver;
 				}
