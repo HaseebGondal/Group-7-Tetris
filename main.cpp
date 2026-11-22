@@ -926,25 +926,27 @@ int main() {
 				window.draw(remTime);
 				highScoreText.setString("Best: " + std::to_string(highScores[static_cast<int>(CurrentMode)]));
 				window.draw(highScoreText);
-				for (int i = 0;i < length;i++) {
-					for (int j = 0;j < length;j++) {
-						if (Currentgrid[i][j] != 0) {
-							float posX = 20 + ((j + blockX) * 40);
-							float posY = (i + blockY - bufferRow) * 40;
-							shape.setPosition(sf::Vector2f(posX, posY));
-							float ghostY = blockY;
-							while (!VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, ghostY, row, column, 1)) {
-								ghostY++;
+				if (!reachedBottom) {
+					for (int i = 0;i < length;i++) {
+						for (int j = 0;j < length;j++) {
+							if (Currentgrid[i][j] != 0) {
+								float posX = 20 + ((j + blockX) * 40);
+								float posY = (i + blockY - bufferRow) * 40;
+								shape.setPosition(sf::Vector2f(posX, posY));
+								float ghostY = blockY;
+								while (!VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, ghostY, row, column, 1)) {
+									ghostY++;
+								}
+								ghostY = (i + ghostY - bufferRow) * 40;
+								ghost.setPosition({ posX,ghostY });
+								sf::Color ghostColor = shape.getFillColor();
+								ghostColor.a = 160;
+								ghost.setFillColor(sf::Color::Transparent);
+								ghost.setOutlineThickness(2.0f);
+								ghost.setOutlineColor(ghostColor);
+								window.draw(ghost);
+								window.draw(shape);
 							}
-							ghostY = (i + ghostY - bufferRow) * 40;
-							ghost.setPosition({ posX,ghostY });
-							sf::Color ghostColor = shape.getFillColor();
-							ghostColor.a = 160;
-							ghost.setFillColor(sf::Color::Transparent);
-							ghost.setOutlineThickness(2.0f);
-							ghost.setOutlineColor(ghostColor);
-							window.draw(ghost);
-							window.draw(shape);
 						}
 					}
 				}
