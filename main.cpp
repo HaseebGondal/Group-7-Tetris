@@ -9,7 +9,7 @@
 
 
 enum class Gameevents {
-	Starting, Playing, Pause, GameOver,Credits
+	Starting, Playing, Pause, GameOver,Credits , Controls 
 };
 enum class block {
 	I, J, L, Z, S, O, T
@@ -520,6 +520,19 @@ int main() {
 	sf::RectangleShape creditBackRect({ 200, 50 });
 	creditBackRect.setFillColor(sf::Color::Cyan);
 	creditBackRect.setPosition({ 200, 675 });
+	sf::RectangleShape controls({ 200, 46 });
+	controls.setFillColor(sf::Color(247, 150, 46));
+	sf::RectangleShape controlsBox({ 480, 460 });
+	controlsBox.setFillColor(sf::Color(22, 25, 37));
+	controlsBox.setOutlineThickness(1);
+	controlsBox.setOutlineColor(sf::Color::White);
+	controlsBox.setPosition({ 60, 160 });
+	sf::RectangleShape controlsBackRect({ 200, 50 });
+	controlsBackRect.setFillColor(sf::Color::Cyan);
+	controlsBackRect.setPosition({ 200, 690 });
+	std::string controlKeys[6] = { "Left / Right", "Down Arrow", "Spacebar", "Z / X", "C", "P" };
+	std::string controlActions[6] = { "Move Left / Right", "Soft Drop", "Hard Drop", "Rotate Block", "Hold Feature", "Pause Game" };
+
 	//-----------------------------------Customization------------------------------------------------------
 	background.setFillColor(sf::Color(22, 25, 37));
 	background.setOutlineThickness(1);
@@ -586,6 +599,20 @@ int main() {
 	sf::Text overHighScoreText(font);
 	sf::Text overScoreText(font);
 	sf::Text creditBackText(font, "Main Menu", 30);
+	sf::Text controlsText(font, "Controls", 30);
+	controlsText.setFillColor(sf::Color::Black);
+	sf::Text controlsTitle(Gamefont, "CONTROLS", 40);
+	controlsTitle.setFillColor(sf::Color::Cyan);
+	controlsTitle.setOutlineThickness(1);
+	controlsTitle.setOutlineColor(sf::Color::White);
+	controlsTitle.setPosition({ 140, 70 });
+	sf::Text controlsBackText(font, "Main Menu", 30);
+	controlsBackText.setFillColor(sf::Color::Black);
+	controlsBackText.setPosition({ 225, 695 });
+	sf::Text rowKey(font, "", 22);
+	rowKey.setFillColor(sf::Color::Yellow);
+	sf::Text rowAction(font, "", 22);
+	rowAction.setFillColor(sf::Color::White);
 	creditBackText.setFillColor(sf::Color::Black);
 	creditBackText.setPosition({ 225, 590 });
 	highScoreText.setFillColor(sf::Color::Yellow);
@@ -1132,25 +1159,44 @@ int main() {
 						}
 					}
 				}
-				CreditText.setPosition({ 260, 640 });
-				start.setPosition({ 200, 470 });
-				credit.setPosition({ 200, 630 });
+				start.setPosition({ 200, 460 });
+				startText.setPosition({ 265, 468 });
+				load.setPosition({ 200, 520 });
+				loadText.setPosition({ 265, 528 });
+				controls.setPosition({ 200, 580 });
+				controlsText.setPosition({ 245, 585 });
+				credit.setPosition({ 200, 636 });
+				CreditText.setPosition({ 260, 641 });
 				window.draw(start);
 				window.draw(startText);
-				window.draw(credit);
-				window.draw(CreditText);
 				window.draw(load);
 				window.draw(loadText);
+				window.draw(controls);
+				window.draw(controlsText);
+				window.draw(credit);
+				window.draw(CreditText);
 			}
 			else {
 				start.setPosition({ 200, 470 });
-				credit.setPosition({ 200, 550 });
-				CreditText.setPosition({ 260, 555 });
-				startText.setPosition({ 265, 480 });
+				startText.setPosition({ 265, 478 });
+				controls.setPosition({ 200, 540 });
+				controlsText.setPosition({ 245, 545 });
+				credit.setPosition({ 200, 610 });
+				CreditText.setPosition({ 260, 615 });
 				window.draw(start);
 				window.draw(startText);
+				window.draw(controls);
+				window.draw(controlsText);
 				window.draw(credit);
 				window.draw(CreditText);
+			}
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+				sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+				sf::Vector2f pos = controls.getPosition();
+				if (mousePos.x >= pos.x && mousePos.x <= pos.x + controls.getSize().x &&
+					mousePos.y >= pos.y && mousePos.y <= pos.y + controls.getSize().y) {
+					gevent = Gameevents::Controls;
+				}
 			}
 			if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
 				sf::Vector2i mousePos = sf::Mouse::getPosition(window);
@@ -1266,6 +1312,34 @@ int main() {
 				sf::Vector2f pos = creditBackRect.getPosition();
 				if (mousePos.x >= pos.x && mousePos.x <= pos.x + credit.getSize().x &&
 					mousePos.y >= pos.y && mousePos.y <= pos.y + credit.getSize().y) {
+					gevent = Gameevents::Starting;
+				}
+			}
+			window.display();
+		}
+		else if (gevent == Gameevents::Controls) {
+			window.clear(sf::Color(15, 17, 26));
+			window.draw(controlsTitle);
+			window.draw(controlsBox);
+
+			for (int i = 0; i < 6; i++) {
+				rowKey.setString(controlKeys[i]);
+				rowKey.setPosition({ 90.0f, 195.0f + (i * 70.0f) });
+				window.draw(rowKey);
+
+				rowAction.setString("=  " + controlActions[i]);
+				rowAction.setPosition({ 275.0f, 195.0f + (i * 70.0f) });
+				window.draw(rowAction);
+			}
+
+			window.draw(controlsBackRect);
+			window.draw(controlsBackText);
+
+			if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+				sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+				sf::Vector2f pos = controlsBackRect.getPosition();
+				if (mousePos.x >= pos.x && mousePos.x <= pos.x + controlsBackRect.getSize().x &&
+					mousePos.y >= pos.y && mousePos.y <= pos.y + controlsBackRect.getSize().y) {
 					gevent = Gameevents::Starting;
 				}
 			}
