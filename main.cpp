@@ -86,6 +86,7 @@ std::vector<std::vector<int>> BlockPosition(sf::RectangleShape& rect, block& Min
 		};
 		break;
 	}
+	return { { 0 } };
 }
 
 bool HorizontalCollisionCheck(std::vector<std::vector<int>> Currentgrid, std::vector<std::vector<int>> GameGrid, int length, int BlockX, int BlockY, int row, int coloumn,int offSet) {
@@ -128,7 +129,7 @@ bool VerticalCollisionCheck(std::vector<std::vector<int>> Currentgrid, std::vect
 
 void Drop(int& blockY, int level, float DeltaTime, float& fallTimer, std::vector<std::vector<int>>& Currentgrid, int length, bool& reachedBottom, int blockX, int column, int row,std::vector<std::vector<int>>& GameGrid,block Current,bool& lastButtonSpin,bool softDrop =false) {
 	double fallSpeed = 0.8 - ((level - 1) * 0.007);
-	float fallDelay = pow(fallSpeed, (level - 1));
+	double fallDelay = pow(fallSpeed, (level - 1));
 	if (softDrop) {
 		fallDelay = 0.3f;
 	}
@@ -223,6 +224,7 @@ void clearance(std::vector<std::vector<int>>& GameGrid, int row, int column, int
 	}
 
 	level = (clearline / 7) + 1;
+	isTspin = false;
 }
 std::vector<int> FindCompletedRow(std::vector<std::vector<int>>& GameGrid, int row, int column) {
 	std::vector<int> completedRows;
@@ -356,7 +358,7 @@ void saveGameState(const std::vector<std::vector<int>>& GameGrid, int row, int c
 	}
 }
 
-bool loadGameState(std::vector<std::vector<int>>& GameGrid, int row, int col,GameModes mode, int& score, int& lineCleared, int& level, float& modeTimer,block& Current, block& Next, block& Hold, bool& hasHold, bool& canHold, int& blockX, int& blockY) {
+bool loadGameState(std::vector<std::vector<int>>& GameGrid, int row, int col,GameModes mode, int& score, int& lineCleared, int& level, float& modeTimer,block& Current, block& Next, block& Hold, bool& hasHold, bool& canHold, int& blockX, int& blockY,bool& hasLocked,bool& isClearingAnimation,float& clearingAnimationTimer,bool& isTspin, std::vector<int>& clearingRows) {
 	std::ifstream in(getSaveFileName(mode));
 	if (!in.is_open()) return false;
 	int m, c, n, h;
@@ -371,6 +373,11 @@ bool loadGameState(std::vector<std::vector<int>>& GameGrid, int row, int col,Gam
 			in >> GameGrid[i][j];
 		}
 }
+	hasLocked = false;
+	isClearingAnimation = false;
+	clearingAnimationTimer = 0.0f;
+	clearingRows.clear();
+	isTspin = false;
 	return true;
 }
 
@@ -725,7 +732,7 @@ int main() {
 				}
 			}
 			//----------------------------------------------Playing Screen Controls-----------------------------------
-			if (gevent == Gameevents::Playing) {
+			if (gevent == Gameevents::Playing&&!isClearingAnimation) {
 				if (event->is < sf::Event::KeyPressed >()) {
 					auto key = event->getIf < sf::Event::KeyPressed >();
 					if (key->code == sf::Keyboard::Key::Left) {
@@ -790,6 +797,7 @@ int main() {
 					}
 
 				}
+			}
 				if (event->is < sf::Event::KeyReleased >()) {
 					auto key = event->getIf < sf::Event::KeyReleased >();
 					if (key->code == sf::Keyboard::Key::Down) {
@@ -799,7 +807,6 @@ int main() {
 						hardDrop = true;
 					}
 				}
-			}
 			
 			if (event->is < sf::Event::KeyPressed >()) {
 				auto key = event->getIf < sf::Event::KeyPressed >();
@@ -868,6 +875,7 @@ int main() {
 				}
 				else {
 					clearance(GameGrid, row, column, lineCleared, level, score, isTspin);
+					isTspin = false;
 				}
 			}
 			//---------------------------------------------High Score-------------------------------------------------------------------
@@ -912,12 +920,12 @@ int main() {
 			window.clear(sf::Color(15, 17, 26));
 			for (int i = bufferRow;i < row;i++) {
 				for (int j = 0;j < column;j++) {
-					background.setPosition(sf::Vector2f(20 + (j * 40), (i - bufferRow) * 40));
+					background.setPosition(sf::Vector2f(20.0f + (j * 40.0f), (i - bufferRow) * 40.0f));
 					window.draw(background);
 
 					if (GameGrid[i][j] != 0) {
 						int colour = GameGrid[i][j];
-						Gridshape.setPosition(sf::Vector2f(20 + (j * 40), (i - bufferRow) * 40));
+						Gridshape.setPosition(sf::Vector2f(20.0f + (j * 40.0f), (i - bufferRow) * 40.0f));
 						GridShapeColour(Gridshape, colour);
 						bool whiteRow = false;
 						if (isClearingAnimation) {
@@ -964,14 +972,14 @@ int main() {
 					for (int i = 0;i < length;i++) {
 						for (int j = 0;j < length;j++) {
 							if (Currentgrid[i][j] != 0) {
-								float posX = 20 + ((j + blockX) * 40);
-								float posY = (i + blockY - bufferRow) * 40;
+								float posX = 20.0f + ((j + blockX) * 40.0f);
+								float posY = (i + blockY - bufferRow) * 40.0f;
 								shape.setPosition(sf::Vector2f(posX, posY));
-								float ghostY = blockY;
-								while (!VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, ghostY, row, column, 1)) {
+								float ghostY = (float)blockY;
+								while (!VerticalCollisionCheck(Currentgrid, GameGrid, length, blockX, (int)ghostY, row, column, 1)) {
 									ghostY++;
 								}
-								ghostY = (i + ghostY - bufferRow) * 40;
+								ghostY = (i + ghostY - bufferRow) * 40.0f;
 								ghost.setPosition({ posX,ghostY });
 								sf::Color ghostColor = shape.getFillColor();
 								ghostColor.a = 160;
@@ -1072,7 +1080,7 @@ int main() {
 				for (int i = bufferRow;i < row;i++) {
 					for (int j = 0;j < column;j++) {
 						if (GameGrid[i][j] != 0) {
-							Gridshape.setPosition(sf::Vector2f(20 + (j * 40), (i - bufferRow) * 40));
+							Gridshape.setPosition(sf::Vector2f(20.0f + (j * 40.0f), (i - bufferRow) * 40.0f));
 							Gridshape.setOutlineThickness(1);
 							Gridshape.setOutlineColor(sf::Color(0, 0, 0, 160));
 							Gridshape.setFillColor(sf::Color(53, 56, 57));
@@ -1164,8 +1172,7 @@ int main() {
 					sf::Vector2f pos = load.getPosition();
 					if (mousePos.x >= pos.x && mousePos.x <= pos.x + load.getSize().x &&
 						mousePos.y >= pos.y && mousePos.y <= pos.y + load.getSize().y) {
-						if (loadGameState(GameGrid, row, column, CurrentMode, score, lineCleared, level, modeTimer,
-							Current, Next, Hold, hasHold, canHold, blockX, blockY)) {
+						if (loadGameState(GameGrid, row, column, CurrentMode, score, lineCleared, level, modeTimer,Current, Next, Hold, hasHold, canHold, blockX, blockY,hasLocked,isClearingAnimation,clearingAnimationTimer,isTspin,clearingRows)) {
 							Currentgrid = BlockPosition(shape, Current, length);
 							reachedBottom = false;
 							lastButtonSpin = false;
