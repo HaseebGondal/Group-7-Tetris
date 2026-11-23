@@ -530,6 +530,10 @@ int main() {
 	sf::RectangleShape controlsBackRect({ 200, 50 });
 	controlsBackRect.setFillColor(sf::Color::Cyan);
 	controlsBackRect.setPosition({ 200, 690 });
+	sf::RectangleShape pauseControlsRect({ 200, 50 });
+	pauseControlsRect.setFillColor(sf::Color(247, 150, 46));
+	pauseControlsRect.setPosition({ 200, 560 });
+	Gameevents previousEvent = Gameevents::Starting;
 	std::string controlKeys[6] = { "Left / Right", "Down Arrow", "Spacebar", "Z / X", "C", "P" };
 	std::string controlActions[6] = { "Move Left / Right", "Soft Drop", "Hard Drop", "Rotate Block", "Hold Feature", "Pause Game" };
 
@@ -609,6 +613,9 @@ int main() {
 	sf::Text controlsBackText(font, "Main Menu", 30);
 	controlsBackText.setFillColor(sf::Color::Black);
 	controlsBackText.setPosition({ 225, 695 });
+	sf::Text pauseControlsText(font, "Controls", 30);
+	pauseControlsText.setFillColor(sf::Color::Black);
+	pauseControlsText.setPosition({ 245, 565 });
 	sf::Text rowKey(font, "", 22);
 	rowKey.setFillColor(sf::Color::Yellow);
 	sf::Text rowAction(font, "", 22);
@@ -1048,6 +1055,17 @@ int main() {
 						bgMusic.play();
 					}
 				}
+				window.draw(pauseControlsRect);
+				window.draw(pauseControlsText);
+				if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+					sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+					sf::Vector2f pos = pauseControlsRect.getPosition();
+					if (mousePos.x >= pos.x && mousePos.x <= pos.x + pauseControlsRect.getSize().x &&
+						mousePos.y >= pos.y && mousePos.y <= pos.y + pauseControlsRect.getSize().y) {
+						previousEvent = Gameevents::Pause;
+						gevent = Gameevents::Controls;
+					}
+				}
 			}
 			if (gevent == Gameevents::GameOver) {
 				window.draw(GameOver);
@@ -1195,6 +1213,7 @@ int main() {
 				sf::Vector2f pos = controls.getPosition();
 				if (mousePos.x >= pos.x && mousePos.x <= pos.x + controls.getSize().x &&
 					mousePos.y >= pos.y && mousePos.y <= pos.y + controls.getSize().y) {
+					previousEvent = Gameevents::Starting;
 					gevent = Gameevents::Controls;
 				}
 			}
@@ -1332,6 +1351,14 @@ int main() {
 				window.draw(rowAction);
 			}
 
+			if (previousEvent == Gameevents::Pause) {
+				controlsBackText.setString("Back");
+				controlsBackText.setPosition({ 265, 695 });
+			}
+			else {
+				controlsBackText.setString("Main Menu");
+				controlsBackText.setPosition({ 225, 695 });
+			}
 			window.draw(controlsBackRect);
 			window.draw(controlsBackText);
 
@@ -1340,7 +1367,7 @@ int main() {
 				sf::Vector2f pos = controlsBackRect.getPosition();
 				if (mousePos.x >= pos.x && mousePos.x <= pos.x + controlsBackRect.getSize().x &&
 					mousePos.y >= pos.y && mousePos.y <= pos.y + controlsBackRect.getSize().y) {
-					gevent = Gameevents::Starting;
+					gevent = previousEvent;
 				}
 			}
 			window.display();
